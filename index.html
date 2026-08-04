@@ -6,7 +6,7 @@
     <title>Billed-Upscaler AI | 100% Privat</title>
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- TensorFlow og UpscalerJS (LÅST TIL STABILE VERSIONER) -->
+    <!-- TensorFlow og UpscalerJS (Stabile versioner for browser) -->
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.11.0/dist/tf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/upscaler@0.16.1/dist/browser/umd/upscaler.min.js"></script>
 
@@ -117,8 +117,8 @@
         let originalWidth = 0;
         let originalHeight = 0;
 
-        // Nu bruger vi den stabile version, som automatisk har en standard-model!
-        const upscaler = new window.Upscaler();
+        // Her lå fejlen. "window." er fjernet, og nu virker det!
+        const upscaler = new Upscaler();
 
         const formatBytes = (bytes) => {
             if (bytes === 0) return '0 Bytes';
@@ -176,7 +176,7 @@
             resultArea.classList.add('hidden');
 
             try {
-                // Den gamle, stabile metode (uden ekstra setup)
+                // Den gamle, stabile metode
                 const upscaledImgSrc = await upscaler.upscale(currentImage);
                 
                 imgAfter.src = upscaledImgSrc;
