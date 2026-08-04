@@ -178,11 +178,8 @@
             resultArea.classList.add('hidden');
 
             try {
-                // Run AI Upscaler
-                const upscaledImgSrc = await upscaler.upscale(currentImage, {
-                    patchSize: 64, // Hjælper på performance uden at crashe browseren
-                    padding: 2
-                });
+                // Run AI Upscaler (Uden patchSize, så den tager hele billedet på én gang)
+                const upscaledImgSrc = await upscaler.upscale(currentImage);
                 
                 // Update UI
                 imgAfter.src = upscaledImgSrc;
