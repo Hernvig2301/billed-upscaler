@@ -6,9 +6,10 @@
     <title>Billed-Upscaler AI | 100% Privat</title>
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- TensorFlow.js og UpscalerJS (AI Modeller) -->
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/upscaler@latest/dist/browser/umd/upscaler.min.js"></script>
+    <!-- TensorFlow.js, Default Model og UpscalerJS -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@upscalerjs/default-model"></script>
+    <script src="https://cdn.jsdelivr.net/npm/upscaler"></script>
 
     <style>
         input[type=range]::-webkit-slider-thumb {
@@ -63,7 +64,7 @@
             </div>
 
             <!-- Advarsel om processeringstid -->
-            <p id="loadingWarning" class="text-xs text-orange-500 hidden">Dette kan tage op til 30 sekunder alt efter din computers grafikkort. Browseren kan fryse kortvarigt.</p>
+            <p id="loadingWarning" class="text-xs text-orange-500 hidden">Henter AI-model og beregner... Dette kan tage op til 30 sekunder. Browseren kan fryse kortvarigt.</p>
 
             <div id="resultArea" class="hidden flex-col gap-4 mt-4">
                 <div class="flex justify-between items-end">
@@ -118,8 +119,10 @@
         let originalWidth = 0;
         let originalHeight = 0;
 
-        // Initialize UpscalerJS
-        const upscaler = new Upscaler();
+        // Initialize UpscalerJS MED den korrekte model!
+        const upscaler = new Upscaler({
+            model: DefaultUpscalerModel
+        });
 
         const formatBytes = (bytes) => {
             if (bytes === 0) return '0 Bytes';
@@ -178,7 +181,7 @@
             resultArea.classList.add('hidden');
 
             try {
-                // Run AI Upscaler (Uden patchSize, så den tager hele billedet på én gang)
+                // Kør AI Upscaler
                 const upscaledImgSrc = await upscaler.upscale(currentImage);
                 
                 // Update UI
@@ -196,7 +199,7 @@
 
             } catch (error) {
                 console.error("Upscaling failed:", error);
-                alert("Der opstod en fejl under AI-beregningen. Billedet er muligvis for stort til browserens hukommelse.");
+                alert("Der opstod en fejl under AI-beregningen. Se konsollen for mere info.");
             } finally {
                 // Reset Loading State
                 upscaleBtn.disabled = false;
