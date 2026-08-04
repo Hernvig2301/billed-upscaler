@@ -80,7 +80,7 @@
                     </a>
                 </div>
 
-                <div class="relative w-full h-[400px] bg-gray-100 rounded-lg overflow-hidden border border-gray-200 mt-2 select-none group">
+                <div id="compareBox" class="relative w-full h-[400px] bg-gray-100 rounded-lg overflow-hidden border border-gray-200 mt-2 select-none group">
                     <img id="imgBefore" class="absolute inset-0 w-full h-full object-contain pointer-events-none" alt="Original">
                     <img id="imgAfter" class="absolute inset-0 w-full h-full object-contain pointer-events-none clip-upscaled" alt="Upscaled">
 
@@ -94,7 +94,16 @@
 
                     <span class="absolute top-4 left-4 bg-black/60 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">Original</span>
                     <span class="absolute top-4 right-4 bg-blue-600 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">AI Opskaleret</span>
+
+                    <!-- Zoom-lupper: viser de faktiske pixels ved musen, i stedet for det nedskalerede preview -->
+                    <div id="magOriginal" class="hidden absolute w-36 h-36 rounded-full border-4 border-white shadow-xl pointer-events-none z-40 bg-gray-800 bg-no-repeat overflow-hidden">
+                        <span class="absolute bottom-1 left-1/2 -translate-x-1/2 text-[10px] font-semibold bg-black/70 text-white px-1.5 py-0.5 rounded">Original</span>
+                    </div>
+                    <div id="magUpscaled" class="hidden absolute w-36 h-36 rounded-full border-4 border-blue-500 shadow-xl pointer-events-none z-40 bg-gray-800 bg-no-repeat overflow-hidden">
+                        <span class="absolute bottom-1 left-1/2 -translate-x-1/2 text-[10px] font-semibold bg-blue-600 text-white px-1.5 py-0.5 rounded">AI 2x</span>
+                    </div>
                 </div>
+                <p class="text-xs text-gray-400 mt-2">Tip: hold musen over billedet for at zoome ind og se detaljeforskellen i fuld opløsning.</p>
             </div>
         </div>
     </main>
@@ -120,6 +129,9 @@
         const slider = document.getElementById('slider');
         const sliderLine = document.getElementById('sliderLine');
         const globalError = document.getElementById('globalError');
+        const compareBox = document.getElementById('compareBox');
+        const magOriginal = document.getElementById('magOriginal');
+        const magUpscaled = document.getElementById('magUpscaled');
 
         let currentImage = null;
         let originalWidth = 0;
@@ -231,6 +243,61 @@
                 loadingWarning.classList.add('hidden');
             }
         });
+
+        // --- Zoom-lup: viser rigtige pixels ved musen, så man kan se opskaleringen ---
+        // (Uden dette ser før/efter altid ens ud, fordi begge billeder bliver skaleret
+        // ned til den samme 400px-boks — forskellen findes i pixels, men er usynlig
+        // ved "fit"-visning.)
+        const ZOOM = 3;
+        const LENS = 144; // px, matcher w-36 h-36
+
+        const updateMagnifier = (clientX, clientY) => {
+            if (resultArea.classList.contains('hidden')) return;
+
+            const boxRect = compareBox.getBoundingClientRect();
+            const imgRect = imgBefore.getBoundingClientRect(); // before/after deler samme visningsstørrelse
+
+            const relX = clientX - imgRect.left;
+            const relY = clientY - imgRect.top;
+
+            if (relX < 0 || relY < 0 || relX > imgRect.width || relY > imgRect.height) {
+                magOriginal.classList.add('hidden');
+                magUpscaled.classList.add('hidden');
+                return;
+            }
+
+            const bgWidth = imgRect.width * ZOOM;
+            const bgHeight = imgRect.height * ZOOM;
+            const bgPosX = -(relX * ZOOM - LENS / 2);
+            const bgPosY = -(relY * ZOOM - LENS / 2);
+
+            const boxX = clientX - boxRect.left;
+            const boxY = clientY - boxRect.top;
+
+            [
+                { el: magOriginal, src: imgBefore.src, offsetX: -(LENS + 12) },
+                { el: magUpscaled, src: imgAfter.src, offsetX: 12 },
+            ].forEach(({ el, src, offsetX }) => {
+                el.style.backgroundImage = `url(${src})`;
+                el.style.backgroundSize = `${bgWidth}px ${bgHeight}px`;
+                el.style.backgroundPosition = `${bgPosX}px ${bgPosY}px`;
+                el.style.left = `${Math.min(Math.max(boxX + offsetX, 0), boxRect.width - LENS)}px`;
+                el.style.top = `${Math.min(Math.max(boxY - LENS / 2, 0), boxRect.height - LENS)}px`;
+                el.classList.remove('hidden');
+            });
+        };
+
+        const hideMagnifier = () => {
+            magOriginal.classList.add('hidden');
+            magUpscaled.classList.add('hidden');
+        };
+
+        compareBox.addEventListener('mousemove', (e) => updateMagnifier(e.clientX, e.clientY));
+        compareBox.addEventListener('mouseleave', hideMagnifier);
+        compareBox.addEventListener('touchmove', (e) => {
+            if (e.touches.length) updateMagnifier(e.touches[0].clientX, e.touches[0].clientY);
+        }, { passive: true });
+        compareBox.addEventListener('touchend', hideMagnifier);
 
         // --- AI-biblioteket indlæses dynamisk, så en CDN-fejl vises for brugeren ---
         // fremfor at knække hele scriptet stille og roligt (det var den oprindelige bug:
