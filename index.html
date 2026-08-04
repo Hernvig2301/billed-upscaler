@@ -6,10 +6,9 @@
     <title>Billed-Upscaler AI | 100% Privat</title>
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- TensorFlow.js, Default Model og UpscalerJS (De korrekte BROWSER-filer!) -->
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@upscalerjs/default-model@latest/dist/browser/umd/index.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/upscaler@latest/dist/browser/umd/upscaler.min.js"></script>
+    <!-- TensorFlow og UpscalerJS (LÅST TIL STABILE VERSIONER) -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.11.0/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/upscaler@0.16.1/dist/browser/umd/upscaler.min.js"></script>
 
     <style>
         input[type=range]::-webkit-slider-thumb {
@@ -118,10 +117,8 @@
         let originalWidth = 0;
         let originalHeight = 0;
 
-        // Initialize UpscalerJS med den korrekte model
-        const upscaler = new window.Upscaler({
-            model: window.DefaultUpscalerModel
-        });
+        // Nu bruger vi den stabile version, som automatisk har en standard-model!
+        const upscaler = new window.Upscaler();
 
         const formatBytes = (bytes) => {
             if (bytes === 0) return '0 Bytes';
@@ -171,7 +168,6 @@
         upscaleBtn.addEventListener('click', async () => {
             if (!currentImage) return;
 
-            // UI Loading state
             upscaleBtn.disabled = true;
             upscaleBtn.classList.add('opacity-75', 'cursor-not-allowed');
             btnText.textContent = "Beregner...";
@@ -180,10 +176,9 @@
             resultArea.classList.add('hidden');
 
             try {
-                // Kør AI Upscaler
+                // Den gamle, stabile metode (uden ekstra setup)
                 const upscaledImgSrc = await upscaler.upscale(currentImage);
                 
-                // Update UI
                 imgAfter.src = upscaledImgSrc;
                 downloadBtn.href = upscaledImgSrc;
                 downloadBtn.download = `ai_upscaled_${fileNameEl.textContent}`;
@@ -191,16 +186,14 @@
                 
                 resultArea.classList.remove('hidden');
                 
-                // Reset slider
                 slider.value = 50;
                 imgAfter.style.clipPath = `polygon(50% 0, 100% 0, 100% 100%, 50% 100%)`;
                 sliderLine.style.left = `50%`;
 
             } catch (error) {
                 console.error("Upscaling failed:", error);
-                alert("Der opstod en fejl under AI-beregningen. Se konsollen for mere info.");
+                alert("Der opstod en fejl. Tjek venligst konsollen for detaljer.");
             } finally {
-                // Reset Loading State
                 upscaleBtn.disabled = false;
                 upscaleBtn.classList.remove('opacity-75', 'cursor-not-allowed');
                 btnText.textContent = "Kør AI Opskalering";
